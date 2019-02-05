@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+	<pre id = "calibration"></pre>
+	<script type ="text/javascript">
+		var ws = new WebSocket('ws://localhost:11222/');
+		ws.onmessage = function(event) {
+			console.log(event.data);
+			calibration=JSON.parse(event.data);
+			document.getElementById("calibration").textContent = JSON.stringify(calibration, null, ' ');
+		};
+	</script>
+</body>
+</html>
