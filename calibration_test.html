@@ -3,14 +3,21 @@
 <head>
 </head>
 <body>
-	<pre id = "calibration"></pre>
+	<pre id = "calibration">Driver installed, no Looking Glass detected!</pre>
 	<script type ="text/javascript">
 		var ws = new WebSocket('ws://localhost:11222/');
 		ws.onmessage = function(event) {
-			console.log(event.data);
+			console.log("event:"+event.data);
+			try {
 			calibration=JSON.parse(event.data);
 			document.getElementById("calibration").textContent = JSON.stringify(calibration, null, ' ');
+			}catch (e){
+				document.getElementById("calibration").textContent = "Driver installed but calibration file is invalid.";
+			}
+
 		};
+ws.onerror=function(event){document.getElementById("calibration").textContent = "Driver not installed."};
+
 	</script>
 </body>
 </html>
