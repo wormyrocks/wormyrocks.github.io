@@ -5,12 +5,23 @@
 <body>
 	<pre id = "calibration"></pre>
 	<script type ="text/javascript">
+		timeout=setTimeout(function(){document.getElementById("calibration").textContent = "Driver installed, no Looking Glass connected!"}, 200);
 		var ws = new WebSocket('ws://localhost:11222/');
 		ws.onmessage = function(event) {
-			console.log(event.data);
+				clearTimeout(timeout);
+			try {
 			calibration=JSON.parse(event.data);
 			document.getElementById("calibration").textContent = JSON.stringify(calibration, null, ' ');
+			}catch (e){
+				document.getElementById("calibration").textContent = "Driver installed but calibration file is invalid.";
+			}
+
 		};
+ws.onerror=function(event){
+	clearTimeout(timeout);
+	document.getElementById("calibration").textContent = "Driver not installed."
+};
+
 	</script>
 </body>
 </html>
