@@ -12,9 +12,12 @@
 <body>
     <div id="examples">
     </div> <textarea spellcheck="false" id="json_input" cols=50 rows=20></textarea>
-    <div id="cbordiv">
-        <pre style='color:#ff00ff'>drop file on page to append binary to message cbor</pre>
+    <textarea spellcheck="false" id="response" readonly cols=50 rows=20></textarea>
+    <div id="cbordiv" style='color:#ff00ff'>
+        <pre>drop file on page to append binary to message</pre>
     </div>
+    <div style='color:#ff00ff' id="quiltexdiv">or, load example quilt:
+    </div><br />
     <button id="sendbutton" onclick="send()">Send</button>
     <button id="clearbutton" onclick="document.getElementById('logdiv').innerHTML=''">Clear Log</button>
     <button id="dumpbutton" onclick="dumpcbor()">Dump CBOR</button>
@@ -27,7 +30,7 @@
         var rawData = 0;
         var cmdExamples = [{
                 "show": {
-                    "target": 0,
+                    "targetDisplay": 0,
                     "source": "bindata",
                     "quilt": {
                         "type": "image",
@@ -56,26 +59,69 @@
             },
             {
                 "show": {
-                    "target": 0,
+                    "targetDisplay": 0,
                     "source": "cache",
                     quilt: {
                         "name": "quilt01"
                     }
                 }
             },
+            {
+                "hide": {
+                    "targetDisplay": 0
+                }
+            },
+            {
+                "show": {
+                    "targetDisplay": 0
+                }
+            },
+            {
+                "wipe": {
+                    "targetDisplay": 0
+                }
+            },
         ];
+        var quiltExamples = [
+            "evan.jpg",
+            "albert.jpg"
+        ];
+
+        function loadExampleQuilt(fname) {
+            var xhttp = new XMLHttpRequest();
+            xhttp.responseType = 'arraybuffer';
+
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4) {
+                    if (this.status == 200) {
+                        rawData = new Uint8Array(this.response);
+                        log("Loaded " + fname + ".");
+                        document.getElementById('cbordiv').innerHTML = ("<pre style = 'color:#ff00ff' >" + rawData
+                            .byteLength +
+                            " bytes of bindata attached to message (<a href='#' onclick='clearCbor()'>clear</a>)</pre>"
+                        );
+                    } else if (this.status == 404) {
+                        err("Could not load " + fname + ".");
+                    }
+                }
+            };
+            xhttp.open("GET", fname, true);
+            xhttp.send();
+        }
 
         function changeJsonObj(i) {
             document.getElementById("json_input").value = prettyprint(cmdExamples[i]);
         }
         changeJsonObj(0);
         document.getElementById("examples").innerHTML = "enter json, or select example: ";
-        var i = 0;
         for (x in cmdExamples) {
-            document.getElementById("examples").innerHTML += "<a href='#' id='jsonObjSelector-" + i +
-                " style='color:#0000ff' onclick='changeJsonObj(" + i +
-                ")'>[" + i + "]</a> ";
-            ++i;
+            document.getElementById("examples").innerHTML += "[<a href='#' id='jsonObjSelector-" + x +
+                " style='color:#0000ff' onclick='changeJsonObj(" + x +
+                ")'>" + x + "</a>] ";
+        }
+        for (x in quiltExamples) {
+            document.getElementById("quiltexdiv").innerHTML += "[<a href='#' onclick=\"loadExampleQuilt('quilts/" +
+                quiltExamples[x] + "')\">" + quiltExamples[x] + "</a>] ";
         }
         var reqpipe = 0;
 
@@ -85,13 +131,13 @@
                 "<pre style='color:#ff00ff'>drop file on page to append binary to message</pre>";
         }
         document.body.addEventListener('drop', (e) => {
-            log("received file");
             e.preventDefault();
             const file = e.dataTransfer.items[0].getAsFile();
             const reader = new FileReader();
+            log("received file " + file.name);
             reader.onload = function (e) {
                 rawData = e.target.result;
-                document.getElementById('cbordiv').innerHTML = ("<pre style='color:#ff00ff'>" + rawData
+                document.getElementById('cbordiv').innerHTML = ("<pre style = 'color:#ff00ff' >" + rawData
                     .byteLength +
                     " bytes of bindata attached to message (<a href='#' onclick='clearCbor()'>clear</a>)</pre>"
                 );
@@ -101,6 +147,15 @@
         document.body.addEventListener('dragover', (e) => {
             e.preventDefault();
         });
+
+        function displayResponse() {
+            if (reqpipe == 0 || !reqpipe.inited) {
+                err("Received a response after the pipe was destroyed. Wut");
+                return;
+            }
+            document.getElementById("response").value = prettyprint(ab2str(reqpipe.reps[reqpipe.reps.length - 1]
+                .payload));
+        }
 
         function genCbor() {
             var json_in = document.getElementById("json_input").value;
@@ -129,7 +184,9 @@
         document.getElementById("sendbutton").onclick = function () {
             var delayInMs = 0;
             if (reqpipe == 0 || !reqpipe.inited) {
-                reqpipe = Req("ws://localhost:11221", bintypes.ARRAYBUFFER, 60, 5);
+                reqpipe = Req("ws://localhost:11222/driver", bintypes.ARRAYBUFFER, 60, 5, function () {
+                    displayResponse();
+                });
                 delayInMs = 100;
             }
             setTimeout(function () {
@@ -153,7 +210,7 @@
             link.download = fileName;
             link.click();
         }
-        info("Drop a file anywhere on this page to send it.")
+        info("Drop a file anywhere on this page to attach it.");
     </script>
 </body>
 

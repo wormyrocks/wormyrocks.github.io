@@ -121,20 +121,21 @@ function req_Process(data) {
         }
     }
     if (!found) {
-        err("got reply that doesn't match known request");
+        err("got reply that doesn't match known request!");
+    } else {
+        // this.reqs[i] has been answered, don't resend it
+        clearTimeout(this.reqs[i].timeout);
+        // delete it from the buffer
+        this.reqs.splice(i, 1);
+        // save the reply to the reply buffer (need a way to return this asynchronously)
+        var rep = {
+            id: replyID,
+            payload: new Uint8Array(data, 4, data.byteLength - 4),
+        }
+        log("got reply size: " + rep.payload.byteLength + ", matches ID " + rep.id);
+        this.reps.push(rep);
+        this.responseCallback();
     }
-    // this.reqs[i] has been answered, don't resend it
-    clearTimeout(this.reqs[i].timeout);
-    // delete it from the buffer
-    this.reqs.splice(i, 1);
-    // save the reply to the reply buffer (need a way to return this asynchronously)
-    var rep = {
-        id: replyID,
-        payload: new Uint8Array(data, 4, data.byteLength - 4),
-    }
-    log("got reply size: " + rep.payload.byteLength + ", matches ID " + rep.id);
-    log("reply: " + ab2str(rep.payload, 'utf-8'));
-    this.reps.push(rep);
 }
 
 function req_handleErr(event) {
@@ -176,7 +177,7 @@ function req_Send(data) {
 }
 
 //req0_sock_init
-function Req(url, bintype, timeout_sec, socket_retry_timeout_sec) {
+function Req(url, bintype, timeout_sec, socket_retry_timeout_sec, response_callback) {
     var reqobj = {
         requestID: 0,
         inited: false,
@@ -201,6 +202,7 @@ function Req(url, bintype, timeout_sec, socket_retry_timeout_sec) {
         handle_err: req_handleErr,
         open: req_Open,
         getRequestId: getRequestID,
+        responseCallback: response_callback
     }
     reqobj.requestID = reqobj.getRequestId();
     log("Initial request ID (should be 32 bit random with MSB=1): " + reqobj.requestID);
