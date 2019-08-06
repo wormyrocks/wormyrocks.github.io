@@ -10,6 +10,7 @@
 </head>
 
 <body>
+    ipaddr: <input name="ipaddr" size=30 value="ws://localhost:11222/driver" id="ipfield" type="text"><br/>
     <div id="examples">
     </div> <textarea spellcheck="false" id="json_input" cols=50 rows=20></textarea>
     <textarea spellcheck="false" id="response" readonly cols=50 rows=20></textarea>
@@ -184,7 +185,7 @@
         document.getElementById("sendbutton").onclick = function () {
             var delayInMs = 0;
             if (reqpipe == 0 || !reqpipe.inited) {
-                reqpipe = Req("ws://localhost:11222/driver", bintypes.ARRAYBUFFER, 60, 5, function () {
+                reqpipe = Req(document.getElementById('ipfield').value, bintypes.ARRAYBUFFER, 60, 5, function () {
                     displayResponse();
                 });
                 delayInMs = 100;
