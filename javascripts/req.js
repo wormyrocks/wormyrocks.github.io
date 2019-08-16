@@ -130,7 +130,7 @@ function req_Process(data) {
         // save the reply to the reply buffer (need a way to return this asynchronously)
         var rep = {
             id: replyID,
-            payload: new Uint8Array(data, 4, data.byteLength - 4),
+            payload: data.slice(4) 
         }
         log("got reply size: " + rep.payload.byteLength + ", matches ID " + rep.id);
         this.reps.push(rep);
