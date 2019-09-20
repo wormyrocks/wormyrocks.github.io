@@ -1,0 +1,179 @@
+<html>
+
+<head>
+    <title>iPhone Depth Converter</title>
+    <style>
+        body {
+            font-family: monospace
+        }
+    </style>
+</head>
+
+<body>
+    <pre>drop an iphone depth image on this page to pack the depth data into the alpha channel.</pre>
+    <div id="colordisplay" style="display:none">
+        <img id="colordata" onload="color_load_cb()" style="width:200px" /><br /><a id="colorlink">download original</a>
+    </div>
+    <div id="depthdisplay" style="display:none">
+        <img id="depthdata" onload="depth_load_cb()" style="width:200px" /><br /><a id="depthlink">download depth</a>
+    </div>
+    <div id="bothdisplay" style="display:none">
+        <canvas id="bothdata"></canvas><br /><a id="bothlink">download depth as alpha</a></div>
+    <br />
+    <button id="clearbutton" onclick="document.getElementById('logdiv').innerHTML=''">Clear Log</button>
+    <button id="upload_button" onclick="document.getElementById('file_upload').click()">Upload Image</button>
+    <input type="file" id="file_upload" style="display:none" name="file_upload" accept=".jpg, .jpeg, .png">
+    <div id="logdiv">
+    </div>
+    <script type="text/javascript" src="javascripts/depthparse.js"></script>
+    <script>
+        var color_loaded = false;
+        var depth_loaded = false;
+        var both_loading = false;
+
+        function startProcessing(file) {
+            reset_all();
+            log("received file " + file.name);
+            fname = file.name;
+            if (!file.type.includes("image")) {
+                err("that was not an image file");
+            } else {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    var blob = new Blob([e.target.result], {
+                        type: 'image\/jpeg',
+                    });
+                    // Generate img element with color data
+                    var link = document.getElementById("colorlink");
+                    link.href = window.URL.createObjectURL(blob);
+                    link.download = file.name;
+                    document.getElementById("colordata").src = link.href;
+                    depthconvert(e.target.result, file.name);
+                }
+                reader.readAsArrayBuffer(file);
+            }
+        }
+        document.getElementById("file_upload").onchange = e => {
+            startProcessing(e.target.files[0]);
+        }
+        function reset_all() {
+            document.getElementById("colordisplay").style = "display:none";
+            document.getElementById("bothdisplay").style = "display:none";
+            document.getElementById("depthdisplay").style = "display:none";
+            document.getElementById("colordata").src = "";
+            document.getElementById("depthdata").src = "";
+            document.getElementById("bothdata").src = "";
+            document.getElementById("colorlink").href = "";
+            document.getElementById("depthlink").href = "";
+            document.getElementById("bothlink").href = "";
+            color_loaded = false;
+            depth_loaded = false;
+            both_loading = false;
+        }
+
+        function color_load_cb() {
+            color_loaded = true;
+            if (depth_loaded && !both_loading) {
+                showBoth();
+            }
+        }
+
+        function depth_load_cb() {
+            depth_loaded = true;
+            if (color_loaded && !both_loading) {
+                showBoth();
+            }
+        }
+
+        function imageCreated(blob) {
+            // Generate img element with depth data
+            var link = document.getElementById("bothlink");
+            link.href = window.URL.createObjectURL(blob);
+            //var name_no_extension = fname.substring(0, fname.lastIndexOf("."));
+            var name_no_extension = fname.substring(0, fname.lastIndexOf("."));
+            var fileName = name_no_extension + "_depth_alpha.png";
+            link.download = fileName;
+            document.getElementById("bothdisplay").style = "display:table-cell;padding:5px";
+            document.getElementById("depthdisplay").style = "display:table-cell;padding:5px";
+            document.getElementById("colordisplay").style = "display:table-cell;padding:5px";
+            document.getElementById("bothdata").style = "width:200px";
+            log("done!");
+        }
+
+        function showBoth() {
+            log("compositing depth into alpha channel");
+            both_loading = true;
+            const colorimg = document.getElementById("colordata");
+            const depthimg = document.getElementById("depthdata");
+            const canvas = document.getElementById("bothdata");
+            canvas.width = colorimg.naturalWidth;
+            canvas.height = colorimg.naturalHeight;
+            var ctx = canvas.getContext("2d");
+            ctx.drawImage(colorimg, 0, 0, canvas.width, canvas.height);
+            colorPixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            // ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(depthimg, 0, 0, canvas.width, canvas.height);
+            depthPixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            allPixels = colorPixels;
+            //colorvals = [];
+            // TODO : what happens with low alpha value pixels?
+            for (var i = 0; i < canvas.width * canvas.height * 4; i += 4) {
+                allPixels.data[i + 3] = depthPixels.data[i];
+                //allPixels.data[i + 3] = Math.max(30,depthPixels.data[i]);
+               // if (!colorvals.includes(depthPixels.data[i])) colorvals.push(depthPixels.data[i]);
+            }
+            //log(colorvals);
+            ctx.putImageData(allPixels, 0, 0);
+            var blob = canvas.toBlob(imageCreated, "image/png", 1.0);
+        }
+
+        function depthconvert(imgfile) {
+            log("attempting to extract depth map");
+            var u8aPicture = depthtojpg(new Uint8Array(imgfile));
+            if (!u8aPicture) {
+                err("Could not retrieve depth data from image!");
+                return;
+            }
+            log("...success");
+            var blob = new Blob([u8aPicture], {
+                type: 'image\/jpeg'
+            });
+            // Generate img element with depth data
+            var link = document.getElementById("depthlink");
+            link.href = window.URL.createObjectURL(blob);
+            document.getElementById("depthdata").src = link.href;
+            var name_no_extension = fname.substring(0, fname.lastIndexOf("."));
+            var fileName = name_no_extension + "_depth.jpg";
+            link.download = fileName;
+        }
+        document.body.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const file = e.dataTransfer.items[0].getAsFile();
+            startProcessing(file);
+        });
+        document.body.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        function downloadImage() {
+            log("download image");
+        }
+
+        function err(s) {
+            document.getElementById('logdiv').innerHTML += ("<pre style='color:#ff0000'>" + s + "</pre>");
+            console.log(s);
+        }
+
+        function log(s) {
+            document.getElementById('logdiv').innerHTML += ("<pre>" + s + "</pre>");
+            console.log(s);
+        }
+
+        function info(s) {
+            document.getElementById('logdiv').innerHTML += ("<pre style='color:#0000ff'>" + s + "</pre>");
+            console.log(s);
+        }
+    </script>
+</body>
+
+</html>

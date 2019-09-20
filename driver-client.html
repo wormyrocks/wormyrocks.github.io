@@ -29,7 +29,10 @@
     <script type="text/javascript" src="javascripts/req.js"></script>
     <script>
         var rawData = 0;
-        var cmdExamples = [{
+        var cmdExamples = [
+            {
+                "info": {}
+            }, {
                 "show": {
                     "targetDisplay": 0,
                     "source": "bindata",
@@ -39,7 +42,9 @@
                             "vx": 5,
                             "vy": 9,
                             "vtotal": 45,
-                            "aspect": 1.6
+                            "aspect": 1.6,
+                            "invert": 0,
+                            "overscan": 0
                         }
                     }
                 }
@@ -80,6 +85,29 @@
             {
                 "wipe": {
                     "targetDisplay": 0
+                }
+            },
+            {
+
+                "show": {
+                    "targetDisplay": 0,
+                    "source": "bindata",
+                    "quilt": {
+                        "type": "image",
+                        "settings": {
+                            "depth": {
+                                "center": 50,
+                                "level": 30
+                            }
+                        }
+                    }
+
+                },
+            },{
+                "init": {
+                    "appid": "asdf",
+                    "greedy": true,
+                    "onclose": "hide"
                 }
             },
         ];
@@ -154,8 +182,10 @@
                 err("Received a response after the pipe was destroyed. Wut");
                 return;
             }
-            document.getElementById("response").value = prettyprint(ab2str(reqpipe.reps[reqpipe.reps.length - 1]
-                .payload));
+            respCbor = reqpipe.reps[reqpipe.reps.length - 1].payload;
+            respObj = CBOR.decode(respCbor);
+            respStr = JSON.stringify(respObj);
+            document.getElementById("response").value = prettyprint(respObj);
         }
 
         function genCbor() {
@@ -183,6 +213,7 @@
             return cbor;
         }
         document.getElementById("sendbutton").onclick = function () {
+document.getElementById("response").value="";	
             var delayInMs = 0;
             if (reqpipe == 0 || !reqpipe.inited) {
                 reqpipe = Req(document.getElementById('ipfield').value, bintypes.ARRAYBUFFER, 60, 5, function () {
