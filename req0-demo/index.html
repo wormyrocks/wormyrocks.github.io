@@ -1,0 +1,109 @@
+<html>
+
+<head>
+    <title>req0 Demo</title>
+    <style>
+        body {
+            font-family: monospace
+        }
+    </style>
+</head>
+
+<body>
+    rep0 ip: <input name="ipaddr" size=30 value="ws://localhost:8080" id="ipfield" type="text"><br />
+    <div id="examples">
+    </div>
+    <div id="filetext" style='color:#ff00ff'>
+        <pre>drop file on page to send as req0 message</pre>
+    </div>
+    <button id="sendbutton" onclick="send()">Send</button>
+    <button id="clearbutton" onclick="document.getElementById('logdiv').innerHTML=''">Clear Log</button>
+
+    <div id="logdiv">
+    </div>
+
+    <script type="text/javascript" src="Req.js"></script>
+    <script>
+
+        /* logging functions */
+        function log(s) {
+            document.getElementById("logdiv").innerHTML += ("<pre>" + s + "</pre>");
+            console.log(s);
+        }
+        function err(s) {
+            document.getElementById("logdiv").innerHTML += ("<pre style='color:#ff0000'>" + s + "</pre>");
+            console.log(s);
+        }
+
+        function info(s) {
+            document.getElementById("logdiv").innerHTML += ("<pre style='color:#0000ff'>" + s + "</pre>");
+            console.log(s);
+        }
+
+        var rawData = 0;
+        var reqpipe;
+
+        function clearBlob() {
+            rawData = 0;
+            document.getElementById('filetext').innerHTML =
+                "<pre style='color:#ff00ff'>drop file on page to send as req0 message</pre>";
+            log("cleared message binary");
+        }
+        document.body.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const file = e.dataTransfer.items[0].getAsFile();
+            const reader = new FileReader();
+            log("received file " + file.name);
+            reader.onload = function (e) {
+                rawData = e.target.result;
+                document.getElementById('filetext').innerHTML = ("<pre style = 'color:#ff00ff' >attached binary length: " + rawData
+                    .byteLength +
+                    " bytes (<a href='#' onclick='clearBlob()'>clear</a>)</pre>"
+                );
+            }
+            reader.readAsArrayBuffer(file);
+        });
+        document.body.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        // Callback functions
+        function reqIsOpened() {
+        }
+
+        function displayResponse() {
+            if (reqpipe == undefined || !reqpipe.inited) {
+                err("Received a response after the pipe was destroyed. Wut");
+                return;
+            }
+            respBin = reqpipe.reps[reqpipe.reps.length - 1].payload;
+            reqpipe.log("Received "+respBin.byteLength+"-byte response.  Attempting to display as utf-8:");
+            reqpipe.log(ab2str(respBin));
+        }
+
+        document.getElementById("sendbutton").onclick = function () {
+            var delayInMs = 0;
+            if (reqpipe == undefined || !reqpipe.inited) {
+                reqpipe = new Req(document.getElementById('ipfield').value, bintypes.ARRAYBUFFER, 60, 5, displayResponse, reqIsOpened, "logdiv", true);
+                delayInMs = 100;
+            }
+            setTimeout(function () {
+                var obj = new Uint8Array(rawData, 0, rawData.byteLength);
+                reqpipe.sendMsg(obj);
+            }, delayInMs);
+        }
+
+        // helper functions
+        function str2ab(str, encoding) {
+            var enc = new TextEncoder(encoding);
+            return enc.encode(str).buffer;
+        }
+
+        function ab2str(buf, encoding) {
+            var enc = new TextDecoder(encoding);
+            return enc.decode(buf);
+        }
+      
+    </script>
+</body>
+</html>
