@@ -10,16 +10,13 @@
 </head>
 
 <body>
-    <pre>drop an iphone depth image on this page to pack the depth data into the alpha channel.</pre>
+    <pre>drop a depth image from iphone or pixel 2 on this page to extract the depth map.</pre>
     <div id="colordisplay" style="display:none">
         <img id="colordata" onload="color_load_cb()" style="width:200px" /><br /><a id="colorlink">download original</a>
     </div>
     <div id="depthdisplay" style="display:none">
         <img id="depthdata" onload="depth_load_cb()" style="width:200px" /><br /><a id="depthlink">download depth</a>
     </div>
-    <div id="bothdisplay" style="display:none">
-        <canvas id="bothdata"></canvas><br /><a id="bothlink">download depth as alpha</a></div>
-    <br />
     <button id="clearbutton" onclick="document.getElementById('logdiv').innerHTML=''">Clear Log</button>
     <button id="upload_button" onclick="document.getElementById('file_upload').click()">Upload Image</button>
     <input type="file" id="file_upload" style="display:none" name="file_upload" accept=".jpg, .jpeg, .png">
@@ -58,7 +55,6 @@
         }
         function reset_all() {
             document.getElementById("colordisplay").style = "display:none";
-            document.getElementById("bothdisplay").style = "display:none";
             document.getElementById("depthdisplay").style = "display:none";
             document.getElementById("colordata").src = "";
             document.getElementById("depthdata").src = "";
@@ -73,9 +69,6 @@
 
         function color_load_cb() {
             color_loaded = true;
-            if (depth_loaded && !both_loading) {
-                showBoth();
-            }
         }
 
         function depth_load_cb() {
@@ -93,39 +86,11 @@
             var name_no_extension = fname.substring(0, fname.lastIndexOf("."));
             var fileName = name_no_extension + "_depth_alpha.png";
             link.download = fileName;
-            document.getElementById("bothdisplay").style = "display:table-cell;padding:5px";
             document.getElementById("depthdisplay").style = "display:table-cell;padding:5px";
             document.getElementById("colordisplay").style = "display:table-cell;padding:5px";
-            document.getElementById("bothdata").style = "width:200px";
             log("done!");
         }
 
-        function showBoth() {
-            log("compositing depth into alpha channel");
-            both_loading = true;
-            const colorimg = document.getElementById("colordata");
-            const depthimg = document.getElementById("depthdata");
-            const canvas = document.getElementById("bothdata");
-            canvas.width = colorimg.naturalWidth;
-            canvas.height = colorimg.naturalHeight;
-            var ctx = canvas.getContext("2d");
-            ctx.drawImage(colorimg, 0, 0, canvas.width, canvas.height);
-            colorPixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            // ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(depthimg, 0, 0, canvas.width, canvas.height);
-            depthPixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            allPixels = colorPixels;
-            //colorvals = [];
-            // TODO : what happens with low alpha value pixels?
-            for (var i = 0; i < canvas.width * canvas.height * 4; i += 4) {
-                allPixels.data[i + 3] = depthPixels.data[i];
-                //allPixels.data[i + 3] = Math.max(30,depthPixels.data[i]);
-               // if (!colorvals.includes(depthPixels.data[i])) colorvals.push(depthPixels.data[i]);
-            }
-            //log(colorvals);
-            ctx.putImageData(allPixels, 0, 0);
-            var blob = canvas.toBlob(imageCreated, "image/png", 1.0);
-        }
 
         function depthconvert(imgfile) {
             log("attempting to extract depth map");
