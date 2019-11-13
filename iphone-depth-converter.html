@@ -26,7 +26,6 @@
     <script>
         var color_loaded = false;
         var depth_loaded = false;
-        var both_loading = false;
 
         function startProcessing(file) {
             reset_all();
@@ -58,13 +57,10 @@
             document.getElementById("depthdisplay").style = "display:none";
             document.getElementById("colordata").src = "";
             document.getElementById("depthdata").src = "";
-            document.getElementById("bothdata").src = "";
             document.getElementById("colorlink").href = "";
             document.getElementById("depthlink").href = "";
-            document.getElementById("bothlink").href = "";
             color_loaded = false;
             depth_loaded = false;
-            both_loading = false;
         }
 
         function color_load_cb() {
@@ -73,22 +69,6 @@
 
         function depth_load_cb() {
             depth_loaded = true;
-            if (color_loaded && !both_loading) {
-                showBoth();
-            }
-        }
-
-        function imageCreated(blob) {
-            // Generate img element with depth data
-            var link = document.getElementById("bothlink");
-            link.href = window.URL.createObjectURL(blob);
-            //var name_no_extension = fname.substring(0, fname.lastIndexOf("."));
-            var name_no_extension = fname.substring(0, fname.lastIndexOf("."));
-            var fileName = name_no_extension + "_depth_alpha.png";
-            link.download = fileName;
-            document.getElementById("depthdisplay").style = "display:table-cell;padding:5px";
-            document.getElementById("colordisplay").style = "display:table-cell;padding:5px";
-            log("done!");
         }
 
 
@@ -110,6 +90,8 @@
             var name_no_extension = fname.substring(0, fname.lastIndexOf("."));
             var fileName = name_no_extension + "_depth.jpg";
             link.download = fileName;
+            document.getElementById("depthdisplay").style = "display:table-cell;padding:5px";
+            document.getElementById("colordisplay").style = "display:table-cell;padding:5px";
         }
         document.body.addEventListener('drop', (e) => {
             e.preventDefault();
