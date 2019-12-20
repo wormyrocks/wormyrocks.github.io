@@ -16,7 +16,8 @@
         xhttp.onreadystatechange = function() {
           if (this.readyState == 4) {
             if (this.status == 200) {
-              var showCmd = new ShowMessage({"vx":5,"vy":9}, new Uint8Array(this.response));
+              var showCmd = new ShowMessage({"vx":vx,"vy":vy}, new Uint8Array(this.response));
+              console.log(showCmd);
               if (vt != null) showCmd["cmd"].show.quilt.settings["vtotal"]=vt;
               if (ov != null) showCmd["cmd"].show.quilt.settings["overscan"]=ov;
               if (a != null) showCmd["cmd"].show.quilt.settings["aspect"]=a;
