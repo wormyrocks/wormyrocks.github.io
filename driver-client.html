@@ -1,249 +1,275 @@
 <html>
 
-<head>
-    <title>req/rep Demo</title>
-    <style>
-        body {
-            font-family: monospace
-        }
-    </style>
-</head>
-
-<body>
-    ipaddr: <input name="ipaddr" size=30 value="ws://localhost:11222/driver" id="ipfield" type="text"><br/>
-    <div id="examples">
-    </div> <textarea spellcheck="false" id="json_input" cols=50 rows=20></textarea>
-    <textarea spellcheck="false" id="response" readonly cols=50 rows=20></textarea>
-    <div id="cbordiv" style='color:#ff00ff'>
-        <pre>drop file on page to append binary to message</pre>
-    </div>
-    <div style='color:#ff00ff' id="quiltexdiv">or, load example quilt:
-    </div><br />
-    <button id="sendbutton" onclick="send()">Send</button>
-    <button id="clearbutton" onclick="document.getElementById('logdiv').innerHTML=''">Clear Log</button>
-    <button id="dumpbutton" onclick="dumpcbor()">Dump CBOR</button>
-
-    <div id="logdiv">
-    </div>
-    <script src="javascripts/cbor.min.js" type="text/javascript"></script>
-    <script type="text/javascript" src="javascripts/req.js"></script>
-    <script>
-        var rawData = 0;
-        var cmdExamples = [
-            {
-                "info": {}
-            }, {
-                "show": {
-                    "targetDisplay": 0,
-                    "source": "bindata",
-                    "quilt": {
-                        "type": "image",
-                        "settings": {
-                            "vx": 5,
-                            "vy": 9,
-                            "vtotal": 45,
-                            "aspect": 1.6,
-                            "invert": 0,
-                            "overscan": 0
-                        }
-                    }
-                }
-            },
-            {
-                "cache": {
-                    "quilt": {
-                        "name": "quilt01",
-                        "type": "image",
-                        "settings": {
-                            "vx": 5,
-                            "vy": 9,
-                            "vtotal": 45,
-                            "aspect": 1.6
-                        }
-                    }
-                }
-            },
-            {
-                "show": {
-                    "targetDisplay": 0,
-                    "source": "cache",
-                    quilt: {
-                        "name": "quilt01"
-                    }
-                }
-            },
-            {
-                "hide": {
-                    "targetDisplay": 0
-                }
-            },
-            {
-                "show": {
-                    "targetDisplay": 0
-                }
-            },
-            {
-                "wipe": {
-                    "targetDisplay": 0
-                }
-            },
-            {
-
-                "show": {
-                    "targetDisplay": 0,
-                    "source": "bindata",
-                    "quilt": {
-                        "type": "image",
-                        "settings": {
-                            "depth": {
-                                "center": 50,
-                                "level": 30
+    <head>
+        <title>req/rep Demo</title>
+        <style>
+            body {
+                font-family: monospace
+            }
+        </style>
+    </head>
+    
+    <body>
+        ipaddr: <input name="ipaddr" size=30 value="ws://localhost:11222/driver" id="ipfield" type="text"><br/>
+        <div id="examples">
+        </div> <textarea spellcheck="false" id="json_input" cols=50 rows=20></textarea>
+        <textarea spellcheck="false" id="response" readonly cols=50 rows=20></textarea>
+        <div id="cbordiv" style='color:#ff00ff'>
+            <pre>drop file on page to append binary to message</pre>
+        </div>
+        <div style='color:#ff00ff' id="quiltexdiv">or, load example quilt:
+        </div><br />
+        <button id="sendbutton" onclick="send()">Send</button>
+        <button id="clearbutton" onclick="document.getElementById('logdiv').innerHTML=''">Clear Log</button>
+        <button id="dumpbutton" onclick="dumpcbor()">Dump CBOR</button>
+    
+        <div id="logdiv">
+        </div>
+        <script src="javascripts/cbor.min.js" type="text/javascript"></script>
+        <script type="text/javascript" src="javascripts/req.js"></script>
+        <script>
+            var rawData = 0;
+            var cmdExamples = [
+                {
+                    "info": {}
+                }, {
+                    "show": {
+                        "targetDisplay": 0,
+                        "source": "bindata",
+                        "quilt": {
+                            "type": "image",
+                            "settings": {
+                                "vx": 5,
+                                "vy": 9,
+                                "vtotal": 45,
+                                "aspect": 1.6,
+                                "invert": 0,
+                                "overscan": 0
                             }
                         }
                     }
-
                 },
-            },{
-                "init": {
-                    "appid": "asdf",
-                    "greedy": true,
-                    "onclose": "hide"
-                }
-            },
-        ];
-        var quiltExamples = [
-            "evan.jpg",
-            "albert.jpg"
-        ];
+                {
+                    "cache": {
+                        "quilt": {
+                            "name": "quilt01",
+                            "type": "image",
+                            "settings": {
+                                "vx": 5,
+                                "vy": 9,
+                                "vtotal": 45,
+                                "aspect": 1.6
+                            }
+                        }
+                    }
+                },
+                {
+                    "show": {
+                        "targetDisplay": 0,
+                        "source": "cache",
+                        quilt: {
+                            "name": "quilt01"
+                        }
+                    }
+                },
+                {
+                    "hide": {
+                        "targetDisplay": 0
+                    }
+                },
+                {
+                    "show": {
+                        "targetDisplay": 0
+                    }
+                },
+                {
+                    "wipe": {
+                        "targetDisplay": 0
+                    }
+                },
+                {
+    
+                    "show": {
+                        "targetDisplay": 0,
+                        "source": "bindata",
+                        "quilt": {
+                            "type": "image",
+                            "settings": {
+                                "depth": {
+                                    "center": 50,
+                                    "level": 30
+                                }
+                            }
+                        }
+    
+                    },
+                },{
+                    "init": {
+                        "appid": "asdf",
+                        "greedy": true,
+                        "onclose": "hide"
+                    }
+                },{
+                    "show": {
+                        "targetDisplay": 0,
+                        "source": "bindata",
+                        "quilt": {
+                            "type": "image",
+                            "settings": {
+                                "vx": 5,
+                                "vy": 9,
+                                "vtotal": 45,
+                                "aspect": 1.6,
+                                "invert": 0,
+                                "overscan": 0,
+                                "corner": [0, .24],
+                                "zoom": 0.4,
+                                "blackIsTransparent": true
 
-        function loadExampleQuilt(fname) {
-            var xhttp = new XMLHttpRequest();
-            xhttp.responseType = 'arraybuffer';
-
-            xhttp.onreadystatechange = function () {
-                if (this.readyState == 4) {
-                    if (this.status == 200) {
-                        rawData = new Uint8Array(this.response);
-                        log("Loaded " + fname + ".");
-                        document.getElementById('cbordiv').innerHTML = ("<pre style = 'color:#ff00ff' >" + rawData
-                            .byteLength +
-                            " bytes of bindata attached to message (<a href='#' onclick='clearCbor()'>clear</a>)</pre>"
-                        );
-                    } else if (this.status == 404) {
-                        err("Could not load " + fname + ".");
+                            }
+                        },
+                        "transitions": {
+                            "alpha": {"from": 0, "to": 1, "duration": 0.9},
+                            "corner_x": {"from": -1, "to": -0.34, "duration": 0.9, "ease": "outQuint"}
+                        }
                     }
                 }
-            };
-            xhttp.open("GET", fname, true);
-            xhttp.send();
-        }
-
-        function changeJsonObj(i) {
-            document.getElementById("json_input").value = prettyprint(cmdExamples[i]);
-        }
-        changeJsonObj(0);
-        document.getElementById("examples").innerHTML = "enter json, or select example: ";
-        for (x in cmdExamples) {
-            document.getElementById("examples").innerHTML += "[<a href='#' id='jsonObjSelector-" + x +
-                " style='color:#0000ff' onclick='changeJsonObj(" + x +
-                ")'>" + x + "</a>] ";
-        }
-        for (x in quiltExamples) {
-            document.getElementById("quiltexdiv").innerHTML += "[<a href='#' onclick=\"loadExampleQuilt('quilts/" +
-                quiltExamples[x] + "')\">" + quiltExamples[x] + "</a>] ";
-        }
-        var reqpipe = 0;
-
-        function clearCbor() {
-            rawData = 0;
-            document.getElementById('cbordiv').innerHTML =
-                "<pre style='color:#ff00ff'>drop file on page to append binary to message</pre>";
-        }
-        document.body.addEventListener('drop', (e) => {
-            e.preventDefault();
-            const file = e.dataTransfer.items[0].getAsFile();
-            const reader = new FileReader();
-            log("received file " + file.name);
-            reader.onload = function (e) {
-                rawData = e.target.result;
-                document.getElementById('cbordiv').innerHTML = ("<pre style = 'color:#ff00ff' >" + rawData
-                    .byteLength +
-                    " bytes of bindata attached to message (<a href='#' onclick='clearCbor()'>clear</a>)</pre>"
-                );
+            ];
+            var quiltExamples = [
+                "evan.jpg",
+                "albert.jpg",
+                "quilt-gc-small.jpeg"
+            ];
+    
+            function loadExampleQuilt(fname) {
+                var xhttp = new XMLHttpRequest();
+                xhttp.responseType = 'arraybuffer';
+    
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4) {
+                        if (this.status == 200) {
+                            rawData = new Uint8Array(this.response);
+                            log("Loaded " + fname + ".");
+                            document.getElementById('cbordiv').innerHTML = ("<pre style = 'color:#ff00ff' >" + rawData
+                                .byteLength +
+                                " bytes of bindata attached to message (<a href='#' onclick='clearCbor()'>clear</a>)</pre>"
+                            );
+                        } else if (this.status == 404) {
+                            err("Could not load " + fname + ".");
+                        }
+                    }
+                };
+                xhttp.open("GET", fname, true);
+                xhttp.send();
             }
-            reader.readAsArrayBuffer(file);
-        });
-        document.body.addEventListener('dragover', (e) => {
-            e.preventDefault();
-        });
-
-        function displayResponse() {
-            if (reqpipe == 0 || !reqpipe.inited) {
-                err("Received a response after the pipe was destroyed. Wut");
-                return;
+    
+            function changeJsonObj(i) {
+                document.getElementById("json_input").value = prettyprint(cmdExamples[i]);
             }
-            respCbor = reqpipe.reps[reqpipe.reps.length - 1].payload;
-            respObj = CBOR.decode(respCbor);
-            respStr = JSON.stringify(respObj);
-            document.getElementById("response").value = prettyprint(respObj);
-        }
-
-        function genCbor() {
-            var json_in = document.getElementById("json_input").value;
-            var obj = {
-                cmd: {},
-                bin: {}
-            };
-            try {
-                if (json_in.length > 0)
-                    obj.cmd = JSON.parse(json_in);
-            } catch {
-                err("Invalid JSON, can't generate CBOR");
-                return;
+            changeJsonObj(0);
+            document.getElementById("examples").innerHTML = "enter json, or select example: ";
+            for (x in cmdExamples) {
+                document.getElementById("examples").innerHTML += "[<a href='#' id='jsonObjSelector-" + x +
+                    " style='color:#0000ff' onclick='changeJsonObj(" + x +
+                    ")'>" + x + "</a>] ";
             }
-            document.getElementById("json_input").value = prettyprint(obj.cmd);
-            if (rawData != 0) {
-                obj.bin = new Uint8Array(rawData, 0, rawData.byteLength);
-            } else obj.bin = new Uint8Array();
-            cbor = CBOR.encode(obj);
-
-            log("JSON orig length: " + json_in.length + " bytes / binary send length: " + obj.bin.byteLength +
-                " bytes / CBOR send length: " + cbor.byteLength +
-                " bytes");
-            return cbor;
-        }
-        document.getElementById("sendbutton").onclick = function () {
-document.getElementById("response").value="";	
-            var delayInMs = 0;
-            if (reqpipe == 0 || !reqpipe.inited) {
-                reqpipe = Req(document.getElementById('ipfield').value, bintypes.ARRAYBUFFER, 60, 5, function () {
-                    displayResponse();
-                });
-                delayInMs = 100;
+            for (x in quiltExamples) {
+                document.getElementById("quiltexdiv").innerHTML += "[<a href='#' onclick=\"loadExampleQuilt('quilts/" +
+                    quiltExamples[x] + "')\">" + quiltExamples[x] + "</a>] ";
             }
-            setTimeout(function () {
-                var cbor = genCbor();
-                reqpipe.send(cbor);
-            }, delayInMs);
-        }
-        //https://stackoverflow.com/questions/4810841/how-can-i-pretty-print-json-using-javascript
-        function prettyprint(json) {
-            return JSON.stringify(json, null, 2);
-        }
-
-        function dumpcbor() {
-            var cbor = genCbor();
-            var blob = new Blob([cbor], {
-                type: "application/octet-stream"
+            var reqpipe = 0;
+    
+            function clearCbor() {
+                rawData = 0;
+                document.getElementById('cbordiv').innerHTML =
+                    "<pre style='color:#ff00ff'>drop file on page to append binary to message</pre>";
+            }
+            document.body.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const file = e.dataTransfer.items[0].getAsFile();
+                const reader = new FileReader();
+                log("received file " + file.name);
+                reader.onload = function (e) {
+                    rawData = e.target.result;
+                    document.getElementById('cbordiv').innerHTML = ("<pre style = 'color:#ff00ff' >" + rawData
+                        .byteLength +
+                        " bytes of bindata attached to message (<a href='#' onclick='clearCbor()'>clear</a>)</pre>"
+                    );
+                }
+                reader.readAsArrayBuffer(file);
             });
-            var link = document.createElement('a');
-            link.href = window.URL.createObjectURL(blob);
-            var fileName = "dump.cbor";
-            link.download = fileName;
-            link.click();
-        }
-        info("Drop a file anywhere on this page to attach it.");
-    </script>
-</body>
-
-</html>
+            document.body.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+    
+            function displayResponse() {
+                if (reqpipe == 0 || !reqpipe.inited) {
+                    err("Received a response after the pipe was destroyed. Wut");
+                    return;
+                }
+                respCbor = reqpipe.reps[reqpipe.reps.length - 1].payload;
+                respObj = CBOR.decode(respCbor);
+                respStr = JSON.stringify(respObj);
+                document.getElementById("response").value = prettyprint(respObj);
+            }
+    
+            function genCbor() {
+                var json_in = document.getElementById("json_input").value;
+                var obj = {
+                    cmd: {},
+                    bin: {}
+                };
+                try {
+                    if (json_in.length > 0)
+                        obj.cmd = JSON.parse(json_in);
+                } catch {
+                    err("Invalid JSON, can't generate CBOR");
+                    return;
+                }
+                document.getElementById("json_input").value = prettyprint(obj.cmd);
+                if (rawData != 0) {
+                    obj.bin = new Uint8Array(rawData, 0, rawData.byteLength);
+                } else obj.bin = new Uint8Array();
+                cbor = CBOR.encode(obj);
+    
+                log("JSON orig length: " + json_in.length + " bytes / binary send length: " + obj.bin.byteLength +
+                    " bytes / CBOR send length: " + cbor.byteLength +
+                    " bytes");
+                return cbor;
+            }
+            document.getElementById("sendbutton").onclick = function () {
+    document.getElementById("response").value="";	
+                var delayInMs = 0;
+                if (reqpipe == 0 || !reqpipe.inited) {
+                    reqpipe = Req(document.getElementById('ipfield').value, bintypes.ARRAYBUFFER, 60, 5, function () {
+                        displayResponse();
+                    });
+                    delayInMs = 100;
+                }
+                setTimeout(function () {
+                    var cbor = genCbor();
+                    reqpipe.send(cbor);
+                }, delayInMs);
+            }
+            //https://stackoverflow.com/questions/4810841/how-can-i-pretty-print-json-using-javascript
+            function prettyprint(json) {
+                return JSON.stringify(json, null, 2);
+            }
+    
+            function dumpcbor() {
+                var cbor = genCbor();
+                var blob = new Blob([cbor], {
+                    type: "application/octet-stream"
+                });
+                var link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                var fileName = "dump.cbor";
+                link.download = fileName;
+                link.click();
+            }
+            info("Drop a file anywhere on this page to attach it.");
+        </script>
+    </body>
+    
+    </html>
+    
