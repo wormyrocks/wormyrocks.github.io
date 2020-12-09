@@ -47,11 +47,12 @@ function base64toBlob(base64Data, contentType) {
 }
 function depthtojpg(i_u8aDepth) {
     var retblob
-    var pattern = [0xFF, 0xD8, 0xFF, 0xE1];
+    var pattern = [0xFF, 0xD8, 0xFF, 0xE0];
     var nOff = Math.floor(i_u8aDepth.length / 2);
     var dptsdr = patternsearch(i_u8aDepth, pattern, nOff);
+    var dptsdr2 = patternsearch(i_u8aDepth, pattern, dptsdr+1);
     var dptjpg = null;
-    if (dptsdr > 0) {
+    if (dptsdr2 > 0) {
         dptjpg = i_u8aDepth.subarray(dptsdr, i_u8aDepth.length);
         pattern = [0x64, 0x65, 0x70, 0x74, 0x68];
         var dptcheck = patternsearch(dptjpg, pattern, 0);
@@ -75,20 +76,21 @@ function depthtojpg(i_u8aDepth) {
             console.log("found pixel 2 depth data of size: " + (end - dptsdr) + " bytes")
             // Strip XMP headers (about every 64 bytes?)
             var bytebuf = i_u8aDepth.slice(dptsdr, end)
-            findstr = [0xff, 0xe1, 0xff, 0xb4]
+            findstr = [0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 0x2f, 0x6e, 0x73, 0x2e, 0x61, 0x64, 0x6f, 0x62, 0x65, 0x2e, 0x63, 0x6f, 0x6d, 0x2f]
             var decoder = new TextDecoder()
             var base64_bytes = ""
-            var ind = patternsearch(bytebuf, findstr, 0)
+            var ind = patternsearch(bytebuf, findstr, 0) - 4
             var prev_ind = 0
-            while (ind != 0) {
+            while (ind != -4) {
                 base64_bytes += decoder.decode(bytebuf.slice(prev_ind, ind))
                 console.log("found XMP header, appending slice from: " + prev_ind + " to: " + ind)
                 // XMP header is 79 bytes
                 prev_ind = ind + 79
-                ind = patternsearch(bytebuf, findstr, prev_ind)
+                ind = patternsearch(bytebuf, findstr, prev_ind) - 4
             }
-            console.log("found XMP header, appending slice from: " + prev_ind + " to: " + ind)
+            console.log("found XMP header, appending slice from: " + prev_ind + " to: " + end)
             base64_bytes += decoder.decode(bytebuf.slice(prev_ind, end))
+	    //retblob = new Blob([base64_bytes],{type:"application/octet-stream"}); // dump raw
             retblob = base64toBlob(base64_bytes, "image/jpeg")
         }
     }
