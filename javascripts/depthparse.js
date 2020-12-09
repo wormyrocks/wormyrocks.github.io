@@ -68,8 +68,9 @@ function depthtojpg(i_u8aDepth) {
         // Pixel 2 depth extraction
         // Search for 'GDepth:Data="'
         pattern = [0x47, 0x44, 0x65, 0x70, 0x74, 0x68, 0x3a, 0x44, 0x61, 0x74, 0x61, 0x3d, 0x22];
-        var dptsdr = patternsearch(i_u8aDepth, pattern, 0);
+dptsdr = 0;
 while (true){
+	dptsdr = patternsearch(i_u8aDepth, pattern, dptsdr);
         if (dptsdr != 0) {
             dptsdr += pattern.length;
             var end = dptsdr;
@@ -94,6 +95,7 @@ while (true){
             base64_bytes += decoder.decode(bytebuf.slice(prev_ind, end))
 	    //retblob = new Blob([base64_bytes],{type:"application/octet-stream"}); // dump raw
             blobs.push(base64toBlob(base64_bytes, "image/jpeg"))
+console.log("appended gdepth data");
         } else { break;}
 }
     return blobs;
