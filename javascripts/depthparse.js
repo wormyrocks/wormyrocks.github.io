@@ -45,35 +45,37 @@ function base64toBlob(base64Data, contentType) {
     }
     return new Blob(byteArrays, { type: contentType });
 }
+
 function depthtojpg(i_u8aDepth) {
-    var retblob
-    var pattern = [0xFF, 0xD8, 0xFF, 0xE0];
-    var nOff = Math.floor(i_u8aDepth.length / 2);
-    var dptsdr = patternsearch(i_u8aDepth, pattern, nOff);
-    var dptsdr2 = patternsearch(i_u8aDepth, pattern, dptsdr+1);
-    var dptjpg = null;
-    if (dptsdr2 > 0) {
-        dptjpg = i_u8aDepth.subarray(dptsdr, i_u8aDepth.length);
-        pattern = [0x64, 0x65, 0x70, 0x74, 0x68];
-        var dptcheck = patternsearch(dptjpg, pattern, 0);
-        if (dptcheck == 0) dptjpg = null;
-        else {
-            retblob = new Blob([dptjpg], {
-                type: 'application\/jpeg'
-            });
-        }
+    var blobs=[]
+    var dptsdr = 0;
+    var dptsdr2 = 0;
+    var dptjpg=null;
+
+    while(true){
+	    dptsdr = patternsearch(i_u8aDepth, [0xff,0xd8,0xff], dptsdr+1);
+	    dptsdr2 = patternsearch(i_u8aDepth, [0xff,0xd9], dptsdr+1);
+	    if (dptsdr > 0) {
+		    console.log("found header  at 0x"+dptsdr.toString(16)+" ("+dptsdr+")");
+		    console.log("found trailer at 0x"+dptsdr2.toString(16)+" ("+dptsdr2+")");
+		    dptjpg = i_u8aDepth.subarray(dptsdr, i_u8aDepth.length);
+		    console.log("created depth image of size "+(dptsdr2-dptsdr)+" bytes.");
+		    retblob = new Blob([dptjpg], { type: 'application\/jpeg' });
+		    blobs.push(retblob);
+	    } else { break; }
     }
-    if (dptjpg == null) {
+
         // Pixel 2 depth extraction
         // Search for 'GDepth:Data="'
         pattern = [0x47, 0x44, 0x65, 0x70, 0x74, 0x68, 0x3a, 0x44, 0x61, 0x74, 0x61, 0x3d, 0x22];
         var dptsdr = patternsearch(i_u8aDepth, pattern, 0);
+while (true){
         if (dptsdr != 0) {
             dptsdr += pattern.length;
             var end = dptsdr;
             // Iterate through and find end quote
             while (++end < i_u8aDepth.length && i_u8aDepth[end] != 0x22) { }
-            console.log("found pixel 2 depth data of size: " + (end - dptsdr) + " bytes")
+            console.log("found GDepth data of size: " + (end - dptsdr) + " bytes")
             // Strip XMP headers (about every 64 bytes?)
             var bytebuf = i_u8aDepth.slice(dptsdr, end)
             findstr = [0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 0x2f, 0x6e, 0x73, 0x2e, 0x61, 0x64, 0x6f, 0x62, 0x65, 0x2e, 0x63, 0x6f, 0x6d, 0x2f]
@@ -91,8 +93,8 @@ function depthtojpg(i_u8aDepth) {
             console.log("found XMP header, appending slice from: " + prev_ind + " to: " + end)
             base64_bytes += decoder.decode(bytebuf.slice(prev_ind, end))
 	    //retblob = new Blob([base64_bytes],{type:"application/octet-stream"}); // dump raw
-            retblob = base64toBlob(base64_bytes, "image/jpeg")
-        }
-    }
-    return retblob;
+            blobs.push(base64toBlob(base64_bytes, "image/jpeg"))
+        } else { break;}
+}
+    return blobs;
 }

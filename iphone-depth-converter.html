@@ -11,12 +11,11 @@
 
 <body>
     <pre>drop a depth image from iphone or pixel 2 on this page to extract the depth map.</pre>
+<div id="imagebox">
     <div id="colordisplay" style="display:none">
         <img id="colordata" onload="color_load_cb()" style="width:200px" /><br /><a id="colorlink">download original</a>
     </div>
-    <div id="depthdisplay" style="display:none">
-        <img id="depthdata" onload="depth_load_cb()" style="width:200px" /><br /><a id="depthlink">download depth</a>
-    </div>
+</div>
     <button id="clearbutton" onclick="document.getElementById('logdiv').innerHTML=''">Clear Log</button>
     <button id="upload_button" onclick="document.getElementById('file_upload').click()">Upload Image</button>
     <input type="file" id="file_upload" style="display:none" name="file_upload" accept=".jpg, .jpeg, .png">
@@ -54,11 +53,18 @@
         }
         function reset_all() {
             document.getElementById("colordisplay").style = "display:none";
-            document.getElementById("depthdisplay").style = "display:none";
-            document.getElementById("colordata").src = "";
-            document.getElementById("depthdata").src = "";
             document.getElementById("colorlink").href = "";
-            document.getElementById("depthlink").href = "";
+            document.getElementById("colordata").src = "";
+
+  var elements = document.getElementsByClassName("depthdisplay");
+    while(elements.length > 0){
+        elements[0].parentNode.removeChild(elements[0]);
+    }
+/*
+            document.getElementsByClassName("depthdisplay").style = "display:none";
+            document.getElementsByClassName("depthdata").src = "";
+            document.getElementsByClassName("depthlink").href = "";
+*/
             color_loaded = false;
             depth_loaded = false;
         }
@@ -73,25 +79,25 @@
 
 
         function depthconvert(imgfile) {
-            log("attempting to extract depth map");
-            var u8aPicture = depthtojpg(new Uint8Array(imgfile));
-            if (!u8aPicture) {
-                err("Could not retrieve depth data from image!");
-                return;
-            }
-            log("...success");
-            var blob = new Blob([u8aPicture], {
+            log("scanning for embedded jpeg files...");
+            var blobs = depthtojpg(new Uint8Array(imgfile));
+console.log(blobs);
+	    log("Found "+blobs.length+" embedded JPEG files.");
+if (blobs.length >0) document.getElementById("colordisplay").style = "display:table-cell;padding:5px";
+            for (i=0;i<blobs.length;i++) {
+            var blob = new Blob([blobs[i]], {
                 type: 'image\/jpeg'
             });
+disp_id="depthdisplay"+i;
+disp_data="depthdata"+i;
+disp_link="depthlink"+i;
             // Generate img element with depth data
-            var link = document.getElementById("depthlink");
-            link.href = window.URL.createObjectURL(blob);
-            document.getElementById("depthdata").src = link.href;
+            var link = window.URL.createObjectURL(blob);
+	    document.getElementById("imagebox").innerHTML += "<div id='"+disp_id+"' class='depthdisplay' style='display:table-cell;padding:5px'><img src='"+link+"' id='"+disp_data+"' class='depthdisplay' onload='depth_load_cb()' style='width:200px' /><br /><a target='_BLANK' href='"+link+"' id='"+disp_link+"' class='depthdisplay'>download embedded image "+i+"</a></div>"
             var name_no_extension = fname.substring(0, fname.lastIndexOf("."));
-            var fileName = name_no_extension + "_depth.jpg";
+            var fileName = name_no_extension + "_"+i+".jpg";
             link.download = fileName;
-            document.getElementById("depthdisplay").style = "display:table-cell;padding:5px";
-            document.getElementById("colordisplay").style = "display:table-cell;padding:5px";
+}
         }
         document.body.addEventListener('drop', (e) => {
             e.preventDefault();
