@@ -13,6 +13,7 @@
 		console.log(window.location);
 		var urlParams = new URLSearchParams(window.location.search);
 		let client = new HoloPlayClient();
+		let imageNeedsRefresh = 1;
 		var curQuiltOptions =
 		{
 			q: null,
@@ -43,9 +44,7 @@
 			xhttp.send();
 		}
 		function sanitize(input_id) {
-			console.log(input_id);
 			field = document.getElementById(input_id);
-			console.log(field);
 			input = field.value;
 			if (input == null || input == '') return null;
 			if (field.className == "float") { return (isNaN(input) ? null : (parseFloat(input))) }
@@ -55,6 +54,28 @@
 		function populateEntry(key) {
 			curQuiltOptions[key] = sanitize(key);
 			document.getElementById(key).value = curQuiltOptions[key];
+			if (key == 'q') {
+				if (imageNeedsRefresh == 0) imageNeedsRefresh=1;
+			}
+		}
+		function refreshQuilt() {
+			s = {};
+			if (curQuiltOptions.vx != null) s.vx = curQuiltOptions.vx;
+			if (curQuiltOptions.vy != null) s.vy = curQuiltOptions.vy;
+			if (curQuiltOptions.vt != null) s.vtotal = curQuiltOptions.vt;
+			if (curQuiltOptions.a != null) s.aspect = curQuiltOptions.a;
+			if (curQuiltOptions.ov != null) s.overscan = curQuiltOptions.ov;
+			let showCmd = new ShowCachedMessage('quilt1', null, settings = s);
+console.log(showCmd);
+			client.sendMessage(showCmd).then(
+				function () {
+					console.log("Quilt displayed");
+				}).catch(function (err) {
+					console.log(err);
+				}
+				);
+			myURL = document.getElementById("share_field").value;
+			imageNeedsRefresh = 0;
 		}
 		function arrayBufferDone(buf) {
 			s = {};
@@ -62,7 +83,7 @@
 			if (curQuiltOptions.vy != null) s.vy = curQuiltOptions.vy;
 			if (curQuiltOptions.vt != null) s.vtotal = curQuiltOptions.vt;
 			if (curQuiltOptions.a != null) s.aspect = curQuiltOptions.a;
-			if (curQuiltOptions.ov != null) s.ov = curQuiltOptions.ov;
+			if (curQuiltOptions.ov != null) s.overscan = curQuiltOptions.ov;
 			let showCmd = new CacheMessage("quilt1", settings = s, new Uint8Array(buf), true);
 			client.sendMessage(showCmd).then(
 				function () {
@@ -73,6 +94,7 @@
 				);
 			// we successfully loaded a quilt, so let's push a new URL to history
 			myURL = document.getElementById("share_field").value;
+			imageNeedsRefresh = 0;
 		}
 		function imageLoaded(img) {
 			// img is a blob
@@ -95,8 +117,10 @@
 			imageLoaded(f);
 		}
 		function showquilt() {
-			if (curQuiltOptions.q != null) {
+			if (curQuiltOptions.q != null && imageNeedsRefresh == 1) {
 				downloadFromURL(curQuiltOptions.q, "blob", imageLoaded);
+			} else {
+				refreshQuilt();
 			}
 		}
 		function updateURL(key = null) {
@@ -139,6 +163,7 @@
 			populate();
 			updateURL();
 			if (curQuiltOptions.q != '' && curQuiltOptions.q != null) showquilt();
+			else document.getElementById('example').style = "display:block";
 		});
 	</script>
 	<div>
@@ -161,9 +186,9 @@ overscan (optional, 1/0): <input type="text" size="3" class="int" onchange="upda
 send this url to share: <input type="text" size=50 readonly id='share_field'><button
 onclick="copyText('share_field')">Copy</button>
 or, drag and drop a file to display.
-<a target="_BLANK" href="?q=http://i.imgur.com/mp0pD3I.jpeg&vx=5&vy=9&a=1.6&ov=1">see an example</a></pre>
+<a target="_BLANK" id="example" style="display:none" href="?q=https://i.imgur.com/mp0pD3I.jpeg&vx=5&vy=9&a=1.6&ov=1">see an example</a></pre>
 	</div>
-<div id="filediv" style="display:none">File uploaded.</div>
+<div id="filediv" style="display:none"><pre>File uploaded.</pre></div>
 <button onclick="showquilt()">Show</button>
 <img id="preview_img" style="display:none" />
 </pre>
