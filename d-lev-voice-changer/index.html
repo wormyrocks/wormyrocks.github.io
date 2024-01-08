@@ -21,8 +21,8 @@
     console.log(voices);
     let cur_cell;
     function setKnob(index, value) {
-        str = `${index} ${value} wk `
-        webserial.sendSerial(str)
+	console.log (`setting voice to ${value}`)
+    	webserial.sendSerial(`${index} ${value} wk `)
     }
     function displayTable(show_or_no) {
         document.getElementById("interface").style.display = show_or_no ? "block" : "none";
@@ -33,6 +33,9 @@
             // port already open, we are closing it
             await webserial.closePort();
             displayTable(false);
+	    document.getElementById("cur_voice").innerText = "Click a voice to select it."
+	    cur_cell.style.removeProperty('font-weight');
+	    cur_cell = null;
         } else {
             // no port open, we're opening it
             try {
@@ -66,11 +69,8 @@
                 cell.innerHTML = vind + ". " + voices[vind];
                 cell.addEventListener("click", (event) => {
                     var el = event.target
-                    console.log(event)
                     el.style.setProperty('font-weight', 'bold');
                     if (cur_cell) {
-                        console.log("cur_cell: ")
-                        console.log(cur_cell)
                         cur_cell.style.removeProperty('font-weight');
                     }
                     document.getElementById("cur_voice").innerText = el.innerText
@@ -94,7 +94,6 @@
     <center>
         <h1 style="color: green;">D-Lev Voices</h1>
         
-
         <button id="portButton">Connect to D-Lev</button>
 
         <div id="interface" style="display:none">

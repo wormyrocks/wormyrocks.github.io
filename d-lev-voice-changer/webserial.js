@@ -21,7 +21,7 @@ class WebSerialPort {
       return false;
     }
     // TODO: make this an option.
-    this.autoOpen = true;
+    this.autoOpen = false;
     // copy this to a global variable so that
     // connect/disconnect can access it:
     self = this;
@@ -58,18 +58,16 @@ class WebSerialPort {
       // if no port is passed to this function, 
       if (thisPort == null) {
         // pop up window to select port:
-        this.port = await navigator.serial.requestPort();
+       options = {};
+       this.port = await navigator.serial.requestPort(options);
       } else {
         // open the port that was passed:
         this.port = thisPort;
       }
-      // set port settings and open it:
-      // TODO: make port settings configurable
       // from calling script:
-      await this.port.open({ baudRate: 230400 });
+      await this.port.open({ baudRate: 230400, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
       // start the listenForSerial function:
       this.serialReadPromise = this.listenForSerial();
-
   }
 
   async closePort() {
