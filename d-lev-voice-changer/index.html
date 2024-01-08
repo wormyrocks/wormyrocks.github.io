@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>
+        D-Lev Voice Chooser
+    </title>
+    <style>
+        .added {
+            padding: 20px;
+            margin-top: 20px;
+            background: green;
+            color: white;
+            display: inline-block;
+        }
+    </style>
+</head>
+<script src="voice-list.js"></script>
+<script src="webserial.js"></script>
+<script>
+    console.log(voices);
+    let cur_cell;
+    function setKnob(index, value) {
+        str = `${index} ${value} wk `
+        webserial.sendSerial(str)
+    }
+    function displayTable(show_or_no) {
+        document.getElementById("interface").style.display = show_or_no ? "block" : "none";
+    }
+    async function openClosePort() {
+        let buttonLabel = "Connect to D-Lev";
+        if (webserial.port) {
+            // port already open, we are closing it
+            await webserial.closePort();
+            displayTable(false);
+        } else {
+            // no port open, we're opening it
+            try {
+                await webserial.openPort();
+                buttonLabel = "Disconnect from D-Lev";
+                displayTable(true);
+            } catch (error) {
+                console.error("couldn't open port");
+            }
+        }
+        portButton.innerHTML = buttonLabel;
+    }
+
+    function serialRead(event) {
+        console.log("serial recvd")
+    }
+    function setup() {
+        num_columns = 5
+        num_rows = 50
+        table = document.getElementById("voice-table")
+
+        row_ind = 0
+        for (let vnum = 0; vnum < num_rows * num_columns; vnum++) {
+            if (vnum % num_columns == 0) {
+                row = table.insertRow(-1);
+                row_ind++
+            }
+            cell = row.insertCell(-1);
+            let vind = (vnum % num_columns) * num_rows + Math.floor(vnum / num_columns)
+            if (vind < voices.length) {
+                cell.innerHTML = vind + ". " + voices[vind];
+                cell.addEventListener("click", (event) => {
+                    var el = event.target
+                    console.log(event)
+                    el.style.setProperty('font-weight', 'bold');
+                    if (cur_cell) {
+                        console.log("cur_cell: ")
+                        console.log(cur_cell)
+                        cur_cell.style.removeProperty('font-weight');
+                    }
+                    document.getElementById("cur_voice").innerText = el.innerText
+                    cur_cell = el;
+                    setKnob(6, vind)
+                })
+            }
+        }
+        webserial = new WebSerialPort()
+        if (webserial) {
+            webserial.on("data", serialRead);
+            portButton = document.getElementById("portButton");
+            portButton.addEventListener("click", openClosePort);
+        }
+        // console.log(voices[0])
+    }
+    document.addEventListener("DOMContentLoaded", setup);
+</script>
+
+<body>
+    <center>
+        <h1 style="color: green;">D-Lev Voices</h1>
+        
+
+        <button id="portButton">Connect to D-Lev</button>
+
+        <div id="interface" style="display:none">
+            <h3 id="cur_voice">
+                Click a voice to select it.
+            </h3>
+            <table border=1px id="voice-table"></table>
+        </div>
+    </center>
+</body>
+
+</html>
