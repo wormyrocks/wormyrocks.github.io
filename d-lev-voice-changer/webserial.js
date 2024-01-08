@@ -58,8 +58,7 @@ class WebSerialPort {
       // if no port is passed to this function, 
       if (thisPort == null) {
         // pop up window to select port:
-       options = {};
-       this.port = await navigator.serial.requestPort(options);
+       this.port = await navigator.serial.requestPort();
       } else {
         // open the port that was passed:
         this.port = thisPort;
