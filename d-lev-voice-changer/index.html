@@ -21,8 +21,22 @@
     console.log(voices);
     let cur_cell;
     function setKnob(index, value) {
-	console.log (`setting voice to ${value}`)
-    	webserial.sendSerial(`${index} ${value} wk `)
+        webserial.sendSerial(`${index} ${value} wk `)
+    }
+    function acal() {
+        webserial.sendSerial('acal ')
+    }
+    function readFields() {
+        webserial.sendSerial('0xa 0xb rr ')
+        setTimeout(readFields, 100);
+    }
+    function setPage(page) {
+        console.log(`setting voice to ${page}`)
+        setKnob(7, page)
+    }
+    function setVoice(voice) {
+        console.log(`setting voice to ${voice}`)
+        setKnob(6, voice)
     }
     function displayTable(show_or_no) {
         document.getElementById("interface").style.display = show_or_no ? "block" : "none";
@@ -33,9 +47,10 @@
             // port already open, we are closing it
             await webserial.closePort();
             displayTable(false);
-	    document.getElementById("cur_voice").innerText = "Click a voice to select it."
-	    cur_cell.style.removeProperty('font-weight');
-	    cur_cell = null;
+            document.getElementById("cur_voice").innerText = "Click a voice to select it."
+            document.getElementById("fieldBtn").innerText = "Antenna frequencies"
+            cur_cell.style.removeProperty('font-weight');
+            cur_cell = null;
         } else {
             // no port open, we're opening it
             try {
@@ -49,9 +64,27 @@
         portButton.innerHTML = buttonLabel;
     }
 
-    function serialRead(event) {
-        console.log("serial recvd")
+    function fieldToFreq(val) {
+        return Number("0x" + val) * 196666666 / 549755813888
     }
+
+    function parseFieldVals(fieldStr) {
+        let a_ind = fieldStr.indexOf('[a]')
+        let b_ind = fieldStr.indexOf('[b]')
+        if (a_ind == -1 || b_ind == -1) return
+        p_field_str = fieldStr.slice(a_ind + 3, b_ind)
+        v_field_str = fieldStr.slice(b_ind + 3)
+	    fieldBtn = document.getElementById('fieldVals')
+	    fieldBtn.innerText=`P: ${fieldToFreq(p_field_str)} Hz | V: ${fieldToFreq(v_field_str)} Hz`
+    }
+
+    function serialRead(event) {
+        console.log(event.detail.buf)
+        let out_str = event.detail.buf
+        if (out_str.includes("[a]"))
+            parseFieldVals(out_str)
+    }
+
     function setup() {
         num_columns = 5
         num_rows = 50
@@ -70,7 +103,7 @@
                 cell.addEventListener("click", (event) => {
                     var el = event.target
                     el.style.setProperty('font-weight', 'bold');
-                    if (cur_cell) {
+                    if (cur_cell && el != cur_cell) {
                         cur_cell.style.removeProperty('font-weight');
                     }
                     document.getElementById("cur_voice").innerText = el.innerText
@@ -85,7 +118,6 @@
             portButton = document.getElementById("portButton");
             portButton.addEventListener("click", openClosePort);
         }
-        // console.log(voices[0])
     }
     document.addEventListener("DOMContentLoaded", setup);
 </script>
@@ -93,7 +125,7 @@
 <body>
     <center>
         <h1 style="color: green;">D-Lev Voices</h1>
-        
+
         <button id="portButton">Connect to D-Lev</button>
 
         <div id="interface" style="display:none">
@@ -101,6 +133,7 @@
                 Click a voice to select it.
             </h3>
             <table border=1px id="voice-table"></table>
+	    <button id="fieldVals" onClick="readFields()">field values</button>
         </div>
     </center>
 </body>

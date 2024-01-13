@@ -33,7 +33,7 @@ class WebSerialPort {
     // add an incoming data event:
     // TODO: data should probably be an ArrayBuffer or Stream
     this.incoming = {
-      data: null
+      buf: ""
     }
     // incoming serial data event:
     this.dataEvent = new CustomEvent('data', {
@@ -100,6 +100,7 @@ class WebSerialPort {
   async listenForSerial() {
     // if there's no serial port, return:
     if (!this.port) return;
+    let in_buf = ""
     // while the port is open:
     while (this.port.readable) {
       // initialize the reader:
@@ -108,12 +109,13 @@ class WebSerialPort {
         // read incoming serial buffer:
         const { value, done } = await this.reader.read();
         if (value) {
-          // convert the input to a text string:
-          // TODO: make it possible to receive as binary:
-          this.incoming.data = new TextDecoder().decode(value);
-
-          // fire the event:
-          parent.dispatchEvent(this.dataEvent);
+          in_buf += new TextDecoder().decode(value);
+          let caret_ind = in_buf.indexOf('>')
+          if (caret_ind != -1) {
+            this.incoming.buf = in_buf.slice(0, caret_ind)
+            in_buf = in_buf.slice(caret_ind+1)
+            parent.dispatchEvent(this.dataEvent);
+          }
         }
         if (done) {
           break;
