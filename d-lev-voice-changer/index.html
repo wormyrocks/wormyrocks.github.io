@@ -75,7 +75,7 @@
         p_field_str = fieldStr.slice(a_ind + 3, b_ind)
         v_field_str = fieldStr.slice(b_ind + 3)
 	    fieldBtn = document.getElementById('fieldVals')
-	    fieldBtn.innerText=`P: ${fieldToFreq(p_field_str)} Hz | V: ${fieldToFreq(v_field_str)} Hz`
+	    fieldBtn.innerText=`P: ${Math.floor(fieldToFreq(p_field_str))} Hz | V: ${Math.floor(fieldToFreq(v_field_str))} Hz`
     }
 
     function serialRead(event) {
