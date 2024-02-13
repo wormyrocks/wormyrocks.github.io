@@ -13,13 +13,26 @@
             color: white;
             display: inline-block;
         }
+
+        .favorite {
+            color: blue;
+        }
+
+        .selected {
+            font-weight: bold;
+        }
     </style>
 </head>
 <script src="voice-list.js"></script>
 <script src="webserial.js"></script>
 <script>
     console.log(voices);
+    var urlParams = new URLSearchParams(window.location.search);
+
+    let favorite_voices = [];
     let cur_cell;
+    let table_visible = false;
+
     function setKnob(index, value) {
         webserial.sendSerial(`${index} ${value} wk `)
     }
@@ -39,6 +52,7 @@
         setKnob(6, voice)
     }
     function displayTable(show_or_no) {
+        table_visible = show_or_no; 
         document.getElementById("interface").style.display = show_or_no ? "block" : "none";
     }
     async function openClosePort() {
@@ -49,7 +63,7 @@
             displayTable(false);
             document.getElementById("cur_voice").innerText = "Click a voice to select it."
             document.getElementById("fieldBtn").innerText = "Antenna frequencies"
-            cur_cell.style.removeProperty('font-weight');
+            cur_cell.classList.remove("selected")
             cur_cell = null;
         } else {
             // no port open, we're opening it
@@ -58,6 +72,7 @@
                 buttonLabel = "Disconnect from D-Lev";
                 displayTable(true);
             } catch (error) {
+                displayTable(true);
                 console.error("couldn't open port");
             }
         }
@@ -74,8 +89,8 @@
         if (a_ind == -1 || b_ind == -1) return
         p_field_str = fieldStr.slice(a_ind + 3, b_ind)
         v_field_str = fieldStr.slice(b_ind + 3)
-	    fieldBtn = document.getElementById('fieldVals')
-	    fieldBtn.innerText=`P: ${Math.floor(fieldToFreq(p_field_str))} Hz | V: ${Math.floor(fieldToFreq(v_field_str))} Hz`
+        fieldBtn = document.getElementById('fieldVals')
+        fieldBtn.innerText = `P: ${Math.floor(fieldToFreq(p_field_str))} Hz | V: ${Math.floor(fieldToFreq(v_field_str))} Hz`
     }
 
     function serialRead(event) {
@@ -84,13 +99,85 @@
         if (out_str.includes("[a]"))
             parseFieldVals(out_str)
     }
+    function addToFavorites(voice) {
+        console.log(`adding ${voice} to favorites`)
+        if (favorite_voices.indexOf(voice) == -1) {
+            favorite_voices.push(voice)
+        }
+        saveFavorites()
+    }
+    function removeFromFavorites(voice) {
+        console.log(`removing ${voice} from favorites`)
+        let ind = favorite_voices.indexOf(voice)
+        if (ind != -1) {
+            favorite_voices.splice(ind, 1)
+        }
+        saveFavorites()
+    }
+    function loadFavorites() {
+        console.log("loading favorites");
+        let payload = window.location.search.substring(1,)
+        favorite_voices_raw = Uint8Array.from(atob(payload), c => c.charCodeAt(0)).sort()
+        favorite_voices = Array.from(favorite_voices_raw)
+    }
+    function saveFavorites() {
+        favorite_voices.sort((a,b)=>a-b)
+        myURL = window.location.href.split("?")[0] + "?" + btoa(String.fromCodePoint(...favorite_voices))
+        window.history.replaceState({}, "", myURL);
+    }
+    function setActive(el) {
+        if (cur_cell) {
+            if (el == cur_cell) {
+                if (el.classList.contains("favorite")) {
+                    el.classList.remove("favorite")
+                    removeFromFavorites(parseInt(el.getAttribute("voice")))
+                } else {
+                    el.classList.add("favorite")
+                    addToFavorites(parseInt(el.getAttribute("voice")))
+                }
+            } else {
+                cur_cell.classList.remove("selected")
+            }
+        }
+        el.classList.add("selected")
+        document.getElementById("cur_voice").innerText = el.innerText
+        cur_cell = el;
+        vind = el.getAttribute("voice")
+        setKnob(6, vind)
+    }
+
+    function recordKey(e) {
+        if (!table_visible) return;
+        direction = 1
+        switch (e.key) {
+            case 'ArrowLeft':
+                direction = -1
+            case 'ArrowRight':
+                let v = 0
+                let position = 0
+                if (cur_cell) {
+                    v = parseInt(cur_cell.getAttribute("voice"))
+                    console.log (`fv: ${favorite_voices}`)
+                    console.log(`cur_ind: ${v} -> ${favorite_voices.indexOf(v)}`)
+                    position = (favorite_voices.indexOf(v) + direction) % favorite_voices.length
+                    console.log(`next: ${favorite_voices[position]} -> ${position}`)
+                    if (position == -1) position = favorite_voices.length-1
+                }
+                next_ind = favorite_voices[position]
+                setActive(document.getElementById(`v${next_ind}`))
+                break;
+            default:
+                break;
+        }
+    }
 
     function setup() {
+        document.addEventListener('keydown', recordKey);
         num_columns = 5
         num_rows = 50
         table = document.getElementById("voice-table")
-
         row_ind = 0
+        loadFavorites();
         for (let vnum = 0; vnum < num_rows * num_columns; vnum++) {
             if (vnum % num_columns == 0) {
                 row = table.insertRow(-1);
@@ -99,19 +186,18 @@
             cell = row.insertCell(-1);
             let vind = (vnum % num_columns) * num_rows + Math.floor(vnum / num_columns)
             if (vind < voices.length) {
-                cell.innerHTML = vind + ". " + voices[vind];
+                cell.innerHTML = vind + ". " + voices[vind];            
+                cell.id = `v${vind}`
                 cell.addEventListener("click", (event) => {
-                    var el = event.target
-                    el.style.setProperty('font-weight', 'bold');
-                    if (cur_cell && el != cur_cell) {
-                        cur_cell.style.removeProperty('font-weight');
-                    }
-                    document.getElementById("cur_voice").innerText = el.innerText
-                    cur_cell = el;
-                    setKnob(6, vind)
+                    setActive(event.target)
                 })
+                if (favorite_voices.indexOf(vind) != -1) {
+                    cell.classList.add('favorite')
+                }
             }
+            cell.setAttribute("voice", vind)
         }
+        // open serial port
         webserial = new WebSerialPort()
         if (webserial) {
             webserial.on("data", serialRead);
@@ -124,8 +210,10 @@
 
 <body>
     <center>
-        <h1 style="color: green;">D-Lev Voices</h1>
-
+        <h1 style="color:green;">D-Lev Voices</h1>
+        <h2 style="color:green">Click to change voice</h2>
+        <h2 style="color:green">Double click to set favorite</h2>
+        <h2 style="color:green">Bookmark this page to save favorites</h2>
         <button id="portButton">Connect to D-Lev</button>
 
         <div id="interface" style="display:none">
@@ -133,7 +221,7 @@
                 Click a voice to select it.
             </h3>
             <table border=1px id="voice-table"></table>
-	    <button id="fieldVals" onClick="readFields()">field values</button>
+            <button style="display:none" id="fieldVals" onClick="readFields()">field values</button>
         </div>
     </center>
 </body>
